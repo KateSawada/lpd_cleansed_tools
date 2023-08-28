@@ -36,8 +36,24 @@ def extract_single_track_file(
         npy = np.load(file)
 
         target_pianoroll = npy[..., track_number]
+        target_pianoroll = target_pianoroll != 0
         # check whether pianoroll is suitable for single track dataset
-        condition = True  # TODO: ピアノロールが満たすべき条件
+        # conditions:
+        # - each measures contains N different pitches
+        # - percentage of rest duration in all measures is less than N
+        n_different_pitches = 4
+        n_percentage__rest = 0.5
+        condition = True
+        if (
+            # condition 1
+            np.any(n_different_pitches > np.count_nonzero(
+                np.sum(target_pianoroll, axis=1), axis=1)) or
+            # condition 2
+            np.any(n_percentage__rest > np.mean(
+                np.sum(target_pianoroll, axis=2) != 0, axis=1))
+        ):
+            condition = False
+
         if (condition):
             f.write(file)
             f.write("\n")
